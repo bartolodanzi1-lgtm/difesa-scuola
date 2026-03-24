@@ -1,72 +1,68 @@
 import streamlit as st
 from docx import Document
 from io import BytesIO
+from datetime import datetime
 
-# Configurazione Pagina
 st.set_page_config(page_title="Assistente Legale Scuola", layout="wide")
+st.title("⚖️ Generatore Memoria Difensiva Scolastica")
 
-st.title("⚖️ Assistente Legale Scuola")
-st.write("Generatore automatico di Memorie Difensive e Gestione Documenti")
-
-# BARRA LATERALE - PROTEZIONE
-st.sidebar.header("Area Riservata")
-password = st.sidebar.text_input("Inserisci Password Accesso", type="password")
-
-# --- CONTROLLO PASSWORD ---
+# --- ACCESSO ---
+password = st.sidebar.text_input("Password", type="password")
 if password == "Scuola2026":
-    st.sidebar.success("✅ Accesso Autorizzato")
     
-    # --- SEZIONE 1: CARICAMENTO DOCUMENTI ---
-    st.header("📂 1. Carica Documenti (Foto o PDF)")
-    uploaded_files = st.file_uploader("Trascina qui i documenti o scatta una foto", accept_multiple_files=True)
+    st.header("📝 Compila i dati della Difesa")
     
-    if uploaded_files:
-        st.success(f"Hai caricato {len(uploaded_files)} file.")
-        for file in uploaded_files:
-            st.write(f"📄 Ricevuto: **{file.name}**")
-
-    st.markdown("---")
-
-    # --- SEZIONE 2: DATI DOCENTE ---
-    st.header("✍️ 2. Compila la Difesa")
     col1, col2 = st.columns(2)
     with col1:
-        nome = st.text_input("Nome e Cognome Docente")
-        codice_fiscale = st.text_input("Codice Fiscale")
+        nome = st.text_input("Nome e Cognome Docente/ATA")
+        qualifica = st.selectbox("Qualifica", ["Docente Infanzia", "Docente Primaria", "Docente Secondaria", "Personale ATA"])
+        scuola = st.text_input("Istituto Scolastico di servizio")
     with col2:
-        data_contestazione = st.date_input("Data ricezione contestazione")
-        st.info("Termine ultimo invio: 15 giorni dalla ricezione.")
+        protocollo = st.text_input("N. Protocollo Contestazione")
+        data_c = st.date_input("Data della Contestazione")
+        data_odierna = datetime.now().strftime("%d/%m/%Y")
 
-    # DESCRIZIONE FATTI
-    fatti = st.text_area("Descrivi i fatti (saranno inseriti nella memoria):", height=200, placeholder="Esempio: In data 10/03/2026, durante l'ora di lezione...")
+    st.subheader("🔍 Esposizione dei Fatti e Difesa")
+    fatti_utente = st.text_area("Inserisci qui la tua versione dei fatti e le tue giustificazioni:", height=300)
 
-    # --- SEZIONE 3: GENERAZIONE E DOWNLOAD ---
-    if st.button("🚀 GENERA E SCARICA PACCHETTO"):
-        if nome and fatti:
-            # Creazione file Word
+    if st.button("🚀 GENERA DOCUMENTO LEGALE"):
+        if nome and fatti_utente:
             doc = Document()
-            doc.add_heading(f'MEMORIA DIFENSIVA', 0)
-            doc.add_paragraph(f'Il sottoscritto/a {nome}, nato/a il..., residente a...')
-            doc.add_paragraph(f'\nOGGETTO: Controdeduzioni alla contestazione del {data_contestazione}')
-            doc.add_heading('ESPOSIZIONE DEI FATTI', level=1)
-            doc.add_paragraph(fatti)
-            doc.add_paragraph('\nCon osservanza, \n\nFirma __________________')
+            
+            # --- INTESTAZIONE FORMALE ---
+            p = doc.add_paragraph()
+            p.add_run(f"Al Dirigente Scolastico del {scuola}\n").bold = True
+            p.add_run("Ufficio Procedimenti Disciplinari\n\n")
+            
+            doc.add_heading('MEMORIA DIFENSIVA EX ART. 55-BIS D.LGS. 165/2001', level=1)
+            
+            # --- CORPO DEL TESTO ---
+            doc.add_paragraph(f"Il/La sottoscritto/a {nome}, in servizio presso codesto Istituto in qualità di {qualifica}, "
+                              f"con riferimento alla contestazione di addebito prot. n. {protocollo} del {data_c}, "
+                              "rassegna le seguenti controdeduzioni:")
+            
+            doc.add_heading('IN FATTO E IN DIRITTO', level=2)
+            doc.add_paragraph(fatti_utente) # Qui incolla quello che scrivi tu
+            
+            doc.add_paragraph("\nSi evidenzia che la condotta dello scrivente è stata sempre improntata ai doveri di "
+                              "correttezza e diligenza previsti dal CCNL Comparto Istruzione e Ricerca.")
+            
+            doc.add_heading('CONCLUSIONI', level=2)
+            doc.add_paragraph("Alla luce di quanto sopra esposto, si richiede l'archiviazione del procedimento disciplinare "
+                              "per infondatezza degli addebiti contestati o, in subordine, l'applicazione della sanzione minima.")
+            
+            doc.add_paragraph(f"\nData: {data_odierna}")
+            doc.add_paragraph("\n\nFirma: ___________________________")
 
-            # Preparazione download
+            # --- DOWNLOAD ---
             bio = BytesIO()
             doc.save(bio)
-            
             st.download_button(
-                label="📥 CLICCA QUI PER SCARICARE IL WORD",
+                label="📥 SCARICA LA MEMORIA COMPLETA (WORD)",
                 data=bio.getvalue(),
                 file_name=f"Difesa_{nome.replace(' ', '_')}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
             st.balloons()
         else:
-            st.error("⚠️ Inserisci almeno il Nome e i Fatti per generare il documento.")
-
-else:
-    # Schermata di blocco
-    st.warning("🔒 Inserisci la password nella barra laterale per sbloccare le funzioni.")
-    st.info("Suggerimento: La sezione documenti apparirà solo dopo l'accesso.")
+            st.error("Inserisci Nome e Descrizione dei fatti!")
