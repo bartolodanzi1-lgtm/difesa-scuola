@@ -1,54 +1,55 @@
 import streamlit as st
 
-st.set_page_config(page_title="Assistente Legale", layout="wide")
-st.title("⚖️ Assistente Legale Scuola (Docenti e ATA)")
+# Configurazione minima
+st.set_page_config(page_title="Assistente Legale", layout="centered")
 
-# --- PASSWORD ---
-pw = st.sidebar.text_input("Inserisci Password", type="password")
+st.title("⚖️ Assistente Legale Scuola")
+st.write("Inserisci la password nella barra a sinistra per iniziare.")
 
-if pw == "Scuola2026":
-    st.sidebar.success("✅ Accesso Autorizzato")
+# --- BARRA LATERALE ---
+with st.sidebar:
+    st.header("Accesso")
+    password = st.text_input("Password Accesso", type="password")
+
+# --- LOGICA PRINCIPALE ---
+if password == "Scuola2026":
+    st.success("✅ ACCESSO EFFETTUATO")
     
-    # 1. CARICAMENTO ATTI
-    st.header("📂 1. Carica gli Atti (Foto/PDF)")
-    st.file_uploader("Trascina qui i documenti per riferimento", accept_multiple_files=True)
+    # Sezione Caricamento (Semplificata)
+    st.header("📂 1. Carica Atti")
+    st.file_uploader("Trascina qui i tuoi documenti", type=['pdf', 'jpg', 'png'])
     
     st.divider()
-
-    # 2. COMPILAZIONE
-    st.header("✍️ 2. Scrivi la tua Difesa")
-    col1, col2 = st.columns(2)
-    with col1:
-        nome = st.text_input("Nome e Cognome")
-        profilo = st.selectbox("Tuo Profilo:", ["-- Seleziona --", "ATA - Collaboratore", "ATA - Assistente", "ATA - DSGA", "Docente"])
-    with col2:
-        scuola = st.text_input("Istituto Scolastico")
     
-    fatti = st.text_area("Racconta i fatti e le tue ragioni:", height=200)
+    # Sezione Dati
+    st.header("✍️ 2. Compila la Difesa")
+    nome = st.text_input("Tuo Nome e Cognome")
+    ruolo = st.selectbox("Tuo Profilo", ["ATA - Collaboratore", "ATA - Assistente", "ATA - DSGA", "Docente"])
+    fatti = st.text_area("Racconta i fatti qui sotto:", height=200)
 
-    # 3. GENERAZIONE TESTO (VISIBILE SUBITO)
-    if st.button("✨ CLICCA QUI PER GENERARE IL TESTO"):
-        if nome and fatti and profilo != "-- Seleziona --":
-            st.success("✅ Ecco la tua bozza! Copia questo testo e incollalo in un file Word o in una mail:")
+    # Tasto di generazione
+    if st.button("✨ MOSTRA TESTO DIFESA"):
+        if nome and fatti:
+            st.info("Copia il testo qui sotto e incollalo dove desideri:")
             
-            testo_pronto = f"""
-            AL DIRIGENTE SCOLASTICO DEL: {scuola}
+            # Testo mostrato direttamente a video
+            testo_da_copiare = f"""
+            AL DIRIGENTE SCOLASTICO
             
             OGGETTO: Memoria difensiva ex art. 55-bis D.Lgs. 165/2001
             
-            Il/La sottoscritto/a {nome}, profilo {profilo}, 
-            in relazione alla contestazione ricevuta, espone quanto segue:
+            Il sottoscritto {nome}, in qualità di {ruolo}, 
+            con riferimento alla contestazione ricevuta, dichiara quanto segue:
             
-            DIFESA E FATTI:
             {fatti}
             
-            CONCLUSIONI:
-            Si richiede l'archiviazione del procedimento disciplinare.
+            Si richiede l'archiviazione del procedimento.
             """
-            # Questo crea il riquadro nero con il testo pronto
-            st.code(testo_pronto, language="text")
+            
+            st.text_area("TESTO PRONTO (Seleziona e Copia):", value=testo_da_copiare, height=300)
             st.balloons()
         else:
-            st.error("⚠️ Compila tutti i campi prima di cliccare!")
-else:
-    st.info("Inserisci la password 'Scuola2026' nella barra a sinistra.")
+            st.warning("⚠️ Per favore, inserisci sia il Nome che i Fatti.")
+
+elif password != "" and password != "Scuola2026":
+    st.error("❌ Password errata!")
