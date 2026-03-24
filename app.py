@@ -1,44 +1,76 @@
 import streamlit as st
 from docx import Document
 from io import BytesIO
+from datetime import datetime
 
-st.set_page_config(page_title="Assistente Legale", layout="centered")
-st.title("⚖️ Assistente Legale Scuola")
+# Configurazione Pagina
+st.set_page_config(page_title="Assistente Legale Scuola", layout="wide")
+st.title("⚖️ Assistente Legale Scuola (Docenti e ATA)")
 
-# --- LOGIN ---
-pw = st.sidebar.text_input("Password", type="password")
-if pw == "Scuola2026":
-    st.sidebar.success("Accesso OK")
+# --- ACCESSO ---
+password = st.sidebar.text_input("Inserisci Password Accesso", type="password")
 
-    # --- INPUT ---
-    nome = st.text_input("Nome e Cognome")
-    ruolo = st.selectbox("Profilo", ["ATA - Collaboratore", "ATA - Assistente", "Docente"])
-    fatti = st.text_area("Tua difesa (scrivi qui i fatti)", height=200)
+if password == "Scuola2026":
+    st.sidebar.success("✅ Accesso Autorizzato")
+    
+    # --- 1. SEZIONE CARICAMENTO ATTI (FOTO/PDF) ---
+    st.header("📂 1. Carica gli Atti del Procedimento")
+    st.info("Trascina qui la contestazione o scatta una foto per averla come riferimento.")
+    file_caricati = st.file_uploader("Scegli i file (PDF, JPG, PNG)", accept_multiple_files=True)
+    
+    if file_caricati:
+        for f in file_caricati:
+            st.write(f"✔️ File pronto: **{f.name}**")
 
-    # --- GENERAZIONE ---
-    if st.button("PREPARA FILE WORD"):
-        if nome and fatti:
-            # Creiamo il documento
+    st.markdown("---")
+
+    # --- 2. SEZIONE COMPILAZIONE DIFESA ---
+    st.header("✍️ 2. Compila la tua Memoria")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        nome = st.text_input("Nome e Cognome")
+        profilo = st.selectbox("Qualifica / Profilo:", 
+                             ["-- Seleziona --", 
+                              "ATA - Collaboratore Scolastico", 
+                              "ATA - Assistente Amministrativo", 
+                              "ATA - Assistente Tecnico", 
+                              "ATA - DSGA",
+                              "Docente - Infanzia/Primaria", 
+                              "Docente - Secondaria"])
+    with col2:
+        scuola = st.text_input("Istituto Scolastico")
+        data_c = st.date_input("Data della contestazione")
+
+    st.subheader("🔍 La tua versione dei fatti")
+    fatti = st.text_area("Scrivi qui le tue giustificazioni:", height=250)
+
+    # --- 3. TASTO PER GENERARE IL WORD ---
+    if st.button("🚀 GENERA E SCARICA DOCUMENTO"):
+        if nome and fatti and profilo != "-- Seleziona --":
+            # Creazione Documento Word
             doc = Document()
             doc.add_heading('MEMORIA DIFENSIVA', 0)
-            doc.add_paragraph(f"Il sottoscritto {nome}, in qualità di {ruolo}, espone:")
+            doc.add_paragraph(f"Al Dirigente Scolastico del {scuola}")
+            doc.add_paragraph(f"\nIl sottoscritto {nome}, profilo {profilo}, espone quanto segue:")
             doc.add_paragraph(fatti)
-            doc.add_paragraph("\nSi richiede l'archiviazione.")
-
-            # Salvataggio speciale per evitare blocchi
-            output = BytesIO()
-            doc.save(output)
-            output.seek(0)
+            doc.add_paragraph("\nSi richiede l'archiviazione del procedimento.")
             
-            # MOSTRA IL TASTO DI SCARICAMENTO
+            # Preparazione per il download
+            buffer = BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+            
+            # Tasto per il download effettivo
             st.download_button(
-                label="📥 CLICCA QUI PER SCARICARE IL FILE",
-                data=output,
+                label="📥 CLICCA QUI PER SCARICARE IL WORD",
+                data=buffer,
                 file_name=f"Difesa_{nome}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
             st.balloons()
         else:
-            st.error("Inserisci Nome e Difesa!")
+            st.error("⚠️ Compila Nome, Fatti e seleziona il Profilo!")
+
 else:
-    st.info("Inserisci la password a sinistra")
+    st.warning("🔒 Inserisci la password 'Scuola2026' nella barra laterale.")
