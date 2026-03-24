@@ -1,45 +1,78 @@
 import streamlit as st
 from docx import Document
 from io import BytesIO
+from datetime import datetime
 
-# 1. Configurazione base
-st.set_page_config(page_title="Assistente Legale", layout="centered")
-st.title("⚖️ Assistente Legale Scuola")
+st.set_page_config(page_title="Assistente Legale Scuola", layout="wide")
+st.title("⚖️ Assistente Legale Personale Scuola (Docenti e ATA)")
 
-# 2. Accesso
+# --- ACCESSO ---
 password = st.sidebar.text_input("Inserisci Password", type="password")
 
 if password == "Scuola2026":
-    st.success("Accesso Autorizzato")
+    st.sidebar.success("✅ Accesso Autorizzato")
     
-    # 3. Campi di inserimento
-    nome = st.text_input("Nome e Cognome del Docente")
-    fatti = st.text_area("Descrivi i fatti (la tua difesa)", height=200)
+    st.header("📝 Dati per la Memoria Difensiva")
     
-    # 4. IL TASTO (Assicurati che tutto sia allineato qui sotto!)
-    if st.button("🚀 CREA IL DOCUMENTO WORD"):
-        if nome and fatti:
-            # Creazione effettiva del Word
+    col1, col2 = st.columns(2)
+    with col1:
+        nome = st.text_input("Nome e Cognome")
+        # Menu di selezione migliorato
+        ruolo = st.selectbox("Seleziona il tuo Profilo:", 
+                            ["-- Seleziona --", "Personale ATA (Collaboratore Scolastico)", "Personale ATA (Assistente Amm.vo/Tecnico)", "Docente Infanzia/Primaria", "Docente Secondaria", "DSGA"])
+        scuola = st.text_input("Istituto Scolastico di appartenenza")
+    
+    with col2:
+        protocollo = st.text_input("N. Protocollo Contestazione")
+        data_c = st.date_input("Data della Contestazione")
+        data_odierna = datetime.now().strftime("%d/%m/%Y")
+
+    st.subheader("🔍 La tua Difesa")
+    fatti_utente = st.text_area("Scrivi qui i fatti e le tue giustificazioni:", height=300, placeholder="Esempio: In merito all'addebito contestato, preciso che...")
+
+    # --- GENERAZIONE ---
+    if st.button("🚀 GENERA DOCUMENTO"):
+        if nome and fatti_utente and ruolo != "-- Seleziona --":
             doc = Document()
-            doc.add_heading('MEMORIA DIFENSIVA', 0)
-            doc.add_paragraph(f"Il sottoscritto {nome} espone quanto segue:")
-            doc.add_paragraph(fatti)
-            doc.add_paragraph("\nSi richiede l'archiviazione del procedimento.")
             
-            # Salvataggio in memoria
-            buffer = BytesIO()
-            doc.save(buffer)
-            buffer.seek(0)
+            # Intestazione
+            p = doc.add_paragraph()
+            p.add_run(f"Al Dirigente Scolastico del {scuola}\n").bold = True
+            p.add_run("Ufficio Procedimenti Disciplinari\n\n")
             
-            # 5. IL TASTO DI SCARICAMENTO (Appare solo DOPO il click)
+            doc.add_heading('MEMORIA DIFENSIVA EX ART. 55-BIS D.LGS. 165/2001', level=1)
+            
+            # Testo formale
+            doc.add_paragraph(f"Il/La sottoscritto/a {nome}, in servizio presso codesto Istituto con il profilo di {ruolo}, "
+                              f"in relazione alla contestazione di addebito prot. n. {protocollo} del {data_c}, "
+                              "espone quanto segue a propria difesa:")
+            
+            doc.add_heading('ESPOSIZIONE DEI FATTI', level=2)
+            doc.add_paragraph(fatti_utente)
+            
+            doc.add_paragraph("\nIl sottoscritto ribadisce la propria correttezza operata nel rispetto del CCNL Comparto Istruzione e Ricerca.")
+            
+            doc.add_heading('CONCLUSIONI', level=2)
+            doc.add_paragraph("Si richiede formalmente l'archiviazione del procedimento disciplinare per insussistenza degli addebiti.")
+            
+            doc.add_paragraph(f"\nData: {data_odierna}")
+            doc.add_paragraph("\n\nFirma: ___________________________")
+
+            # Buffer per il download
+            bio = BytesIO()
+            doc.save(bio)
+            bio.seek(0)
+            
+            # TASTO DI DOWNLOAD CHE APPARE ORA
             st.download_button(
-                label="📥 CLICCA QUI PER SALVARE IL FILE",
-                data=buffer,
-                file_name=f"Difesa_{nome}.docx",
+                label="📥 CLICCA QUI PER SCARICARE IL FILE WORD",
+                data=bio,
+                file_name=f"Memoria_{nome.replace(' ', '_')}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
             st.balloons()
         else:
-            st.error("Per favore, inserisci sia il Nome che i Fatti!")
+            st.error("⚠️ Attenzione: Inserisci il Nome, i Fatti e seleziona il Profilo (ATA o Docente)!")
+
 else:
-    st.info("Inserisci la password a sinistra per iniziare.")
+    st.warning("🔒 Inserisci la password 'Scuola2026' nella barra a sinistra.")
