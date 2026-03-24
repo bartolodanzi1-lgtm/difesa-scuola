@@ -1,76 +1,64 @@
 import streamlit as st
-from docx import Document
-from io import BytesIO
 from datetime import datetime
 
-# Configurazione Pagina
-st.set_page_config(page_title="Assistente Legale Scuola", layout="wide")
-st.title("⚖️ Assistente Legale Scuola (Docenti e ATA)")
+st.set_page_config(page_title="Assistente Legale", layout="wide")
+st.title("⚖️ Assistente Legale Scuola - Generatore di Testo")
 
-# --- ACCESSO ---
-password = st.sidebar.text_input("Inserisci Password Accesso", type="password")
+# --- LOGIN ---
+password = st.sidebar.text_input("Password", type="password")
 
 if password == "Scuola2026":
-    st.sidebar.success("✅ Accesso Autorizzato")
+    st.sidebar.success("Accesso OK")
     
-    # --- 1. SEZIONE CARICAMENTO ATTI (FOTO/PDF) ---
-    st.header("📂 1. Carica gli Atti del Procedimento")
-    st.info("Trascina qui la contestazione o scatta una foto per averla come riferimento.")
-    file_caricati = st.file_uploader("Scegli i file (PDF, JPG, PNG)", accept_multiple_files=True)
+    # 1. CARICAMENTO ATTI (Sempre visibile)
+    st.header("📂 1. Carica Atti (Foto/PDF)")
+    st.file_uploader("Trascina qui i documenti del procedimento", accept_multiple_files=True)
     
-    if file_caricati:
-        for f in file_caricati:
-            st.write(f"✔️ File pronto: **{f.name}**")
+    st.divider()
 
-    st.markdown("---")
-
-    # --- 2. SEZIONE COMPILAZIONE DIFESA ---
-    st.header("✍️ 2. Compila la tua Memoria")
-    
+    # 2. DATI
+    st.header("✍️ 2. Compila la tua Difesa")
     col1, col2 = st.columns(2)
     with col1:
         nome = st.text_input("Nome e Cognome")
-        profilo = st.selectbox("Qualifica / Profilo:", 
-                             ["-- Seleziona --", 
-                              "ATA - Collaboratore Scolastico", 
-                              "ATA - Assistente Amministrativo", 
-                              "ATA - Assistente Tecnico", 
-                              "ATA - DSGA",
-                              "Docente - Infanzia/Primaria", 
-                              "Docente - Secondaria"])
+        profilo = st.selectbox("Profilo", ["ATA - Collaboratore", "ATA - Assistente", "ATA - DSGA", "Docente"])
     with col2:
         scuola = st.text_input("Istituto Scolastico")
         data_c = st.date_input("Data della contestazione")
 
-    st.subheader("🔍 La tua versione dei fatti")
-    fatti = st.text_area("Scrivi qui le tue giustificazioni:", height=250)
+    fatti = st.text_area("Scrivi qui la tua versione dei fatti:", height=200)
 
-    # --- 3. TASTO PER GENERARE IL WORD ---
-    if st.button("🚀 GENERA E SCARICA DOCUMENTO"):
-        if nome and fatti and profilo != "-- Seleziona --":
-            # Creazione Documento Word
-            doc = Document()
-            doc.add_heading('MEMORIA DIFENSIVA', 0)
-            doc.add_paragraph(f"Al Dirigente Scolastico del {scuola}")
-            doc.add_paragraph(f"\nIl sottoscritto {nome}, profilo {profilo}, espone quanto segue:")
-            doc.add_paragraph(fatti)
-            doc.add_paragraph("\nSi richiede l'archiviazione del procedimento.")
+    # 3. RISULTATO A VIDEO (Niente più file esterni)
+    if st.button("✨ GENERA TESTO DIFESA"):
+        if nome and fatti and scuola:
+            st.success("✅ Ecco la tua bozza pronta! Copia il testo qui sotto:")
             
-            # Preparazione per il download
-            buffer = BytesIO()
-            doc.save(buffer)
-            buffer.seek(0)
+            # Creazione del blocco di testo visibile
+            testo_finale = f"""
+            AL DIRIGENTE SCOLASTICO DEL: {scuola}
+            UFFICIO PROCEDIMENTI DISCIPLINARI
             
-            # Tasto per il download effettivo
-            st.download_button(
-                label="📥 CLICCA QUI PER SCARICARE IL WORD",
-                data=buffer,
-                file_name=f"Difesa_{nome}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
+            OGGETTO: Memoria difensiva ex art. 55-bis D.Lgs. 165/2001
+            
+            Il/La sottoscritto/a {nome}, in servizio presso codesto Istituto 
+            con il profilo di {profilo}, in relazione alla contestazione 
+            prot. del {data_c}, espone quanto segue:
+            
+            ESPOSIZIONE DEI FATTI:
+            {fatti}
+            
+            CONCLUSIONI:
+            Si richiede l'archiviazione del procedimento disciplinare.
+            
+            Data: {datetime.now().strftime("%d/%m/%Y")}
+            Firma: ___________________________
+            """
+            
+            # Mostra il testo in un riquadro pronto per il Copia/Incolla
+            st.code(testo_finale, language="text")
             st.balloons()
         else:
-            st.error("⚠️ Compila Nome, Fatti e seleziona il Profilo!")
+            st.error("⚠️ Compila tutti i campi prima di generare!")
 
 else:
-    st.warning("🔒 Inserisci la password 'Scuola2026' nella barra laterale.")
+    st.info("Inserisci la password 'Scuola2026' a sinistra.")
